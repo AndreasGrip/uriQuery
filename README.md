@@ -17,27 +17,34 @@ Assuming you know JSON this will be explained by example below
   
     const UriQuery = require('uriQuery');  
   
-Run  
+Run 
+
     const query = new UriQuery('?cols=first,second,third&filter=first[asc]=1,second[desc]=2,third=3');  
+
 OR  
+
     const query = new UriQuery();  
     query = '?cols=first,second[desc],third&filter=first[asc]=1,second=2,third=3';  
   
 Will make query contain  
-        query.filters = [  
-                            [  
-                                {col: 'first', comparisonOperator: '[eq]', compare: ['1']},  
-                                {col: 'second', comparisonOperator: '[eq]', compare: ['2']},  
-                                {col: 'third', comparisonOperator: '[eq]', compare: ['3']}  
-                            ]  
-                        ];  
-query.sortBy = [{col: 'second', sortorder: 'desc'}, {col: 'first', sortorder: 'asc'}];  
-query.cols = {first,second,third};  
+
+    query.filters = [  
+        [  
+            {col: 'first', comparisonOperator: '[eq]', compare: ['1']},  
+            {col: 'second', comparisonOperator: '[eq]', compare: ['2']},  
+            {col: 'third', comparisonOperator: '[eq]', compare: ['3']}  
+        ]  
+    ];  
+    query.sortBy = [{col: 'second', sortorder: 'desc'}, {col: 'first', sortorder: 'asc'}];  
+    query.cols = {first,second,third};  
   
 if you run  
-query.sql('fromTable')  
+
+    query.sql('fromTable')  
+
 it will return  
-SELECT 'first', 'second', 'third' FROM 'fromTable' WHERE  OR ('first' = '1' AND 'second' = '2' AND 'third' = '3') ORDER BY 'first' asc, 'second' desc  
+
+    SELECT 'first', 'second', 'third' FROM 'fromTable' WHERE  OR ('first' = '1' AND 'second' = '2' AND 'third' = '3') ORDER BY 'first' asc, 'second' desc  
   
 Usually you'd like to limit the data users can get from databases.  
 Here is an example of how to limit what user can get.  
@@ -49,8 +56,11 @@ Here is an example of how to limit what user can get.
     console.log(query.sql('fromTable'));  
   
 Will generate  
+
     SELECT 'first', 'third' FROM 'table' WHERE  OR ('first' = '1' AND 'second' = '2' AND 'third' = '3') ORDER BY 'first' asc, 'second' desc  
+
 And cols will look like this.  
+
     query.cols = {first,third};  
   
 Possible operators are  
@@ -76,6 +86,9 @@ Will generate the following sql when running query.sql('table');
     SELECT 'first', 'second', 'third' FROM 'table' WHERE  OR ('first' = '1' AND 'second' = '2' AND 'third' = '3') OR 'first' >= '20' ORDER BY 'first' asc, 'second'   desc  
   
 And 
+
     query.sql('(select t1.first, t2.second, t2.third from table1 t1 join table2 t2 on t1.id = t2.id)');  
+
 Will return.  
+
     SELECT 'first', 'third' FROM '(select t1.first, t2.second, t2.third from table1 t1 join table2 t2 on t1.id = t2.id)' WHERE  OR ('first' = '1' AND 'second' = '2'   AND 'third' = '3') OR 'first' >= '20' ORDER BY 'first' asc, 'second' desc  
