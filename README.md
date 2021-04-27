@@ -15,22 +15,22 @@ It has 6 elements you need to know about.
   
 Assuming you know JSON this will be explained by example below  
   
-const UriQuery = require('uriQuery');  
+    const UriQuery = require('uriQuery');  
   
 Run  
-const query = new UriQuery('?cols=first,second,third&filter=first[asc]=1,second[desc]=2,third=3');  
+    const query = new UriQuery('?cols=first,second,third&filter=first[asc]=1,second[desc]=2,third=3');  
 OR  
-const query = new UriQuery();  
-query = '?cols=first,second[desc],third&filter=first[asc]=1,second=2,third=3';  
+    const query = new UriQuery();  
+    query = '?cols=first,second[desc],third&filter=first[asc]=1,second=2,third=3';  
   
 Will make query contain  
-query.filters = [  
-                    [  
-                        {col: 'first', comparisonOperator: '[eq]', compare: ['1']},  
-                        {col: 'second', comparisonOperator: '[eq]', compare: ['2']},  
-                        {col: 'third', comparisonOperator: '[eq]', compare: ['3']}  
-                    ]  
-                ];  
+        query.filters = [  
+                            [  
+                                {col: 'first', comparisonOperator: '[eq]', compare: ['1']},  
+                                {col: 'second', comparisonOperator: '[eq]', compare: ['2']},  
+                                {col: 'third', comparisonOperator: '[eq]', compare: ['3']}  
+                            ]  
+                        ];  
 query.sortBy = [{col: 'second', sortorder: 'desc'}, {col: 'first', sortorder: 'asc'}];  
 query.cols = {first,second,third};  
   
@@ -42,16 +42,16 @@ SELECT 'first', 'second', 'third' FROM 'fromTable' WHERE  OR ('first' = '1' AND 
 Usually you'd like to limit the data users can get from databases.  
 Here is an example of how to limit what user can get.  
   
-const query = new UriQuery('?cols=first,second,third&filter=first[asc]=1,second[desc]=2,third=3');  
-query.allowedCols.push('first');  
-query.allowedCols.push('third');  
-// query.allowedCols = ['first', 'third']; // you can also do it this way.  
-console.log(query.sql('fromTable'));  
+    const query = new UriQuery('?cols=first,second,third&filter=first[asc]=1,second[desc]=2,third=3');  
+    query.allowedCols.push('first');  
+    query.allowedCols.push('third');  
+    // query.allowedCols = ['first', 'third']; // you can also do it this way.  
+    console.log(query.sql('fromTable'));  
   
 Will generate  
-SELECT 'first', 'third' FROM 'table' WHERE  OR ('first' = '1' AND 'second' = '2' AND 'third' = '3') ORDER BY 'first' asc, 'second' desc  
+    SELECT 'first', 'third' FROM 'table' WHERE  OR ('first' = '1' AND 'second' = '2' AND 'third' = '3') ORDER BY 'first' asc, 'second' desc  
 And cols will look like this.  
-query.cols = {first,third};  
+    query.cols = {first,third};  
   
 Possible operators are  
   
@@ -73,8 +73,9 @@ const query = new UriQuery('?cols=first,second,third&filter=first[asc]=1,second[
   
 Will generate the following sql when running query.sql('table');  
   
-SELECT 'first', 'second', 'third' FROM 'table' WHERE  OR ('first' = '1' AND 'second' = '2' AND 'third' = '3') OR 'first' >= '20' ORDER BY 'first' asc, 'second'   desc  
+    SELECT 'first', 'second', 'third' FROM 'table' WHERE  OR ('first' = '1' AND 'second' = '2' AND 'third' = '3') OR 'first' >= '20' ORDER BY 'first' asc, 'second'   desc  
   
-And query.sql('(select t1.first, t2.second, t2.third from table1 t1 join table2 t2 on t1.id = t2.id)');  
+And 
+    query.sql('(select t1.first, t2.second, t2.third from table1 t1 join table2 t2 on t1.id = t2.id)');  
 Will return.  
-SELECT 'first', 'third' FROM '(select t1.first, t2.second, t2.third from table1 t1 join table2 t2 on t1.id = t2.id)' WHERE  OR ('first' = '1' AND 'second' = '2'   AND 'third' = '3') OR 'first' >= '20' ORDER BY 'first' asc, 'second' desc  
+    SELECT 'first', 'third' FROM '(select t1.first, t2.second, t2.third from table1 t1 join table2 t2 on t1.id = t2.id)' WHERE  OR ('first' = '1' AND 'second' = '2'   AND 'third' = '3') OR 'first' >= '20' ORDER BY 'first' asc, 'second' desc  
