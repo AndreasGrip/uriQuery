@@ -2,7 +2,7 @@
   "name": "uriquery",
   "version": "0.9.0np",
   "description": "convert query part of uri into sql compatible object.",
-  "main": "index.js",
+  "main": "uriQuery.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
