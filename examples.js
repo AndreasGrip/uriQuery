@@ -1,4 +1,4 @@
-const UriQuery = require('./uriQuery');
+const UriQuerySearch = require('./uriQuerySearch');
 
 let queryText = '';
 let command = '';
@@ -7,7 +7,7 @@ queryText = '?cols=kaka,baka[asc]=cho%[or]suga%,saka[desc][neq]kossa&filter=id=3
 console.log("-".repeat(50))
 console.log(queryText);
 console.log("-".repeat(50))
-let query = new UriQuery(queryText);
+let query = new UriQuerySearch(queryText);
 console.log("--- query.colsQuerys: " + JSON.stringify(query.colsQuerys));
 console.log("--- query.filterQuerys: " + JSON.stringify(query.filterQuerys));
 query.allowedCols.push('kaka');
