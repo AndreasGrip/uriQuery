@@ -6,7 +6,8 @@ It was created to get data from sql tables/databases but can be used to get data
   
 It has 6 elements you need to know about.  
 .query This is where you input your query data.  
-.allowedCols array of columns that can be requested  
+.allowedCols array of columns that can be requested
+.allFilters contains an array of subfilters that will be applied to to all filters. (if there is no filters will create one).
 .filters contains an array of sets of filters, each filter being an array of subfilters objects  
 .sortBy contains an array of object on how to sort. Sorting will appear in the following order. First whatever is in cols, then the filters in the order they   are in the string.  
 .cols contains an array of columns to return  
@@ -65,13 +66,12 @@ And cols will look like this.
   
 Possible operators are  
   
-= Equal  
-[eq] Equal  
-[ne] Not equal  
-[lt] less than  
-[le] less than or equal  
-[gt] greater than  
-[ge] greater than or equal  
+ = OR [eq] Equal  
+!= OR [ne] Not equal  
+ < OR [lt] less than  
+<= OR [le] less than or equal  
+ \> OR [gt] greater than  
+\>= OR [ge] greater than or equal  
 [or] logical or, Only to be used with [eq] or [neq]  
 % is wildcard like *  
 After columnname  
