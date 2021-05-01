@@ -1,10 +1,14 @@
 {
   "name": "uriquerysearch",
-  "version": "0.9.5",
+  "version": "0.9.7",
   "description": "convert query part of uri into sql compatible object.",
   "main": "uriQuerySearch.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AndreasGrip/uriQuerySearch.git"
   },
   "keywords": [
     "uri",
@@ -13,6 +17,10 @@
   ],
   "author": "Andreas Grip",
   "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/AndreasGrip/uriQuerySearch/issues"
+  },
+  "homepage": "https://github.com/AndreasGrip/uriQuerySearch#readme",
   "dependencies": {
     "sqlstring": "^2.3.2"
   },
