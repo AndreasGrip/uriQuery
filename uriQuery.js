@@ -48,25 +48,36 @@ const sqlString = require("sqlstring");
 
 module.exports = class uriQuery {
   constructor(query = "") {
-    this._query = query;
-    this.colsQuerys = [];
-    this.filterQuerys = [];
+    this._query = query; // Will contain the original query string
+    this.colsQuerys = []; // Will contain the part of the query string that handels cols
+    this.filterQuerys = []; // Will contain the parts of the query string that handles filters
 
-    this.cols = [];
-    this.filters = [];
-    this._allowedCols = [];
-    this.sortBy = [];
+    this.cols = []; // Will contain a array of the column names
+    this.filters = []; // Will contain a array of filter objects filters[filterObject][subfilter]. "AND" will be set between subfilters, "OR" between filterObject
+    this._allfiltersQuerys = []; // Will contains subfilters to be added to each filterobject.
+    this._allowedCols = []; // Can contain column query is allowed to access.
+    this.sortBy = []; // Can contain array of objects defining sort order. Order will be the same as in this array
 
-    this.escape = sqlString.escape;
+    this.escape = sqlString.escape; // What function to use to escape sql variables
 
-    if (query) this.queryUpdate();
+    if (query) this.queryUpdate(); // If query is not empty update the rest of the variables
   }
 
   get query() {
     return this._query;
   }
+
   set query(q) {
     this._query = q;
+    this.queryUpdate();
+  }
+
+  get allfilters() {
+    return this._allfiltersQuerys;
+  }
+
+  set allfilters(filter) {
+    this._allfiltersQuerys = filter;
     this.queryUpdate();
   }
 
@@ -84,6 +95,7 @@ module.exports = class uriQuery {
     const sortBy = (this.sortBy = []);
     const cols = (this.cols = []);
     const filters = (this.filters = []);
+    const filterAll = this._filterAll;
     const allowedCols = this.allowedCols;
     // remove any leading '?'
     let query = this._query.charAt(0) === "?" ? this._query.slice(1) : this._query;
@@ -109,40 +121,58 @@ module.exports = class uriQuery {
       // remove the [asc]/[desc] using the same regex ensuring only extracted ones are removed.
       query = query.replace(regex, "$1");
       // Find all the "query" arguments
-      regex = /(\w+)(=|\[eq\]|\[neq\]|\[lt\]|\[gt\]|\[le\]|\[ge\])?((\w|\%|\[or\])+)?/gi;
+      regex = /(\w+)(\!=|<>|\[neq\]|<=|\[le\]|\>=|\[ge\]|<|\[lt\]|>|\[gt\]|=|\[eq\])?((\w|\%|\[or\])+)?/gi;
       const filter = [];
       while ((result = regex.exec(query))) {
         // If type is cols add it to cols if allowed.
         if (type === "cols" && (allowedCols.length === 0 || allowedCols.includes(result[1]))) cols.push(result[1]);
-        // If there is a comparisonOperator result[2] will contain something meaning we need to create a filter.
-        if (result[2]) {
-          // If = replace with [eq] (= is just syntetic sugar)
+        if (!result[2] && !result[3]) {
+          // this likly just a col line, do nothing
+        } else if (!result[2] || !result[3]) {
+          console.log(result[0] + " resulted in " + result[1] + " and " + result[2] + " cannot work with that so ignoring rule.");
+        } else {
+          // both result[2] and result[3] contain something, try to do things
+          // If = replace with [eq] (= etc. is just syntetic sugar)
           if (result[2] === "=") result[2] = "[eq]";
+          if (result[2] === ">=") result[2] = "[ge]";
+          if (result[2] === "<=") result[2] = "[le]";
+          if (result[2] === "!=") result[2] = "[neq]";
+          if (result[2] === ">") result[2] = "[gt]";
+          if (result[2] === "<") result[2] = "[lt]";
+
           result[2] = result[2].toLowerCase();
           const filterPart = {
             col: result[1],
             comparisonOperator: result[2],
             compare: result[3].split("[or]"),
           };
-          if (
-            /!\[n?eq\]/i.test(filterPart.comparisonOperator) &&
-            filterPart.compare.find((e) => e.indexOf("%")) &&
-            filterPart.compare.find((e) => e.indexOf("[or]"))
-          ) {
-            console.log(
-              "invalid mix of compare: " +
-                filterPart.compare +
-                " and comparisonOperator: " +
-                filterPart.comparisonOperator
-            );
-            console.log("Only =,[eq],[neq] is allowed to use with [or] and %");
+          // if (/!\[n?eq\]/i.test(filterPart.comparisonOperator) && filterPart.compare.find((e) => e.indexOf("%")) && filterPart.compare.find((e) => e.indexOf("[or]"))) {
+          if (/!\[n?eq\]/i.test(filterPart.comparisonOperator) && filterPart.compare.find((e) => e.indexOf("%")) && filterPart.compare.length != 1) {
+            console.log("invalid mix of compare: " + filterPart.compare + " and comparisonOperator: " + filterPart.comparisonOperator);
+            console.log("Only =,[eq],[neq] is allowed to use with %, or multiple options");
             console.log("This filter will be ignored");
           } else {
-            filter.push(filterPart);
+            if (type === "allFilters") {
+              if (filters.length === 0) {
+                filters.push([filterPart]);
+              } else {
+                filters.forEach((filt) => {
+                  // TODO better names FFS.
+                  filt.push(filterPart);
+                });
+              }
+            } else {
+              filter.push(filterPart);
+            }
           }
         }
       }
-      filters.push(filter);
+      // If no filter data don't ad a new filter
+      if (filter.length > 0) {
+        if (type !== "filterAll") {
+          filters.push(filter);
+        }
+      }
     }
 
     this.colsQuerys.forEach((colsQuery) => {
@@ -151,10 +181,14 @@ module.exports = class uriQuery {
     this.filterQuerys.forEach((filterQuery) => {
       queryHandler(filterQuery, "filters");
     });
+    // Add the allFilters to all the filters
+    this.allfilters.forEach((filter) => {
+      queryHandler(filter, "allFilters");
+    });
   }
 
   sql(from) {
-    if(!from) return;
+    if (!from) return;
     const esc = this.escape;
 
     let query = "SELECT ";
@@ -206,8 +240,7 @@ module.exports = class uriQuery {
               string += "NOT ";
             case "[eq]":
               string += "IN ";
-              string +=
-                "(" + subFilter.compare.map((col) => esc(col)).join(",") + ") ";
+              string += "(" + subFilter.compare.map((col) => esc(col)).join(",") + ") ";
               break;
           }
         }
