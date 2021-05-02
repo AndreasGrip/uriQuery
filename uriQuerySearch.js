@@ -186,7 +186,7 @@ module.exports = class uriQuery {
       queryHandler(filter, "allFilters");
     });
     if (!this.colsQuerys.length && allowedCols.length) {
-      cols.push = [...allowedCols];
+      cols.push(...allowedCols);
     }
   }
 
