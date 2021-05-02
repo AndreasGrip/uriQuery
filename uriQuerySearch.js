@@ -185,8 +185,8 @@ module.exports = class uriQuery {
     this.allfilters.forEach((filter) => {
       queryHandler(filter, "allFilters");
     });
-    if (!colsQuery && allowedCols.length) {
-      allowedCols = [...cols];
+    if (!this.colsQuerys && allowedCols.length) {
+      cols = [...allowedCols];
     }
   }
 
