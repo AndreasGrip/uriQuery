@@ -1,6 +1,6 @@
 {
   "name": "uriquerysearch",
-  "version": "0.9.12",
+  "version": "0.9.13",
   "description": "convert query part of uri into sql compatible object.",
   "main": "uriQuerySearch.js",
   "scripts": {

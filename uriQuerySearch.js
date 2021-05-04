@@ -199,7 +199,7 @@ module.exports = class uriQuery {
       .filter((c) => !this.allowedCols.length || this.allowedCols.includes(c)) // remove any column that don't exist in allowedCols. If AllowedCols is empty allow all.
       .map((col) => esc(col)) // create new array with escaped columns
       .join(", "); // create a comma separated list of
-    query += " FROM " + esc(from) + " WHERE ";
+    query += " FROM " + from + " WHERE ";
     let string = "";
 
     for (let i = 0; i < this.filters.length; i++) {
