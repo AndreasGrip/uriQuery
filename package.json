@@ -1,10 +1,11 @@
 {
   "name": "uriquerysearch",
-  "version": "0.9.13",
+  "version": "0.9.50",
   "description": "convert query part of uri into sql compatible object.",
   "main": "uriQuerySearch.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest",
+    "test1": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
@@ -28,6 +29,7 @@
     "printWidth": 200
   },
   "devDependencies": {
+    "jest": "^26.6.3",
     "prettier": "^2.2.1"
   }
 }
