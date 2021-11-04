@@ -303,9 +303,7 @@ test("new UriQuerySearch('?cols=first>=firstValue,second=secondValue,third') Err
   expect(uriQuery._filters).toStrictEqual([]);
   expect(uriQuery._allfilters).toStrictEqual([]);
 
-  expect(uriQuery._setValues).toStrictEqual([
-    { col: "second", comparisonOperator: "[eq]", compare: ["secondValue"] }
-  ]);
+  expect(uriQuery._setValues).toStrictEqual([{ col: "second", comparisonOperator: "[eq]", compare: ["secondValue"] }]);
   expect(uriQuery.RESTType).toBe("POST");
   expect(uriQuery.filtersRequired).toStrictEqual([]);
   expect(uriQuery.allowedCols).toStrictEqual([]);
@@ -326,9 +324,7 @@ test("new UriQuerySearch('?cols=first=firstValue,second=secondValue&filter=id=3'
   expect(uriQuery._filterQuerys).toStrictEqual(["id=3"]);
   expect(uriQuery._allfiltersQuerys).toStrictEqual([]);
   expect(uriQuery._sortBy).toEqual([]);
-  expect(uriQuery._filters).toStrictEqual([
-
-  ]);
+  expect(uriQuery._filters).toStrictEqual([]);
   expect(uriQuery._allfilters).toStrictEqual([]);
   expect(uriQuery._setValues).toStrictEqual([
     { col: "first", comparisonOperator: "[eq]", compare: ["firstValue"] },

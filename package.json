@@ -1,8 +1,8 @@
 {
   "name": "uriquerysearch",
-  "version": "0.9.50",
+  "version": "0.9.75",
   "description": "convert query part of uri into sql compatible object.",
-  "main": "uriQuerySearch.js",
+  "main": "uriQuerySearchV2.js",
   "scripts": {
     "test": "jest",
     "test1": "echo \"Error: no test specified\" && exit 1"
