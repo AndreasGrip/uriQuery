@@ -28,13 +28,18 @@ After columnname
 */
 
 function createFilterPart(column, comparisonOperator, compare) {
+  // test if what we got already seem to be a filterpart, in that case return it
+  if (column?.column || column?.comparisonOperator || column?.compare?.length) return column;
+  if (column === undefined && comparisonOperator === undefined && compare === undefined) return undefined;
+
   const filterPart = {};
-  filterPart.column = column;
-  filterPart.comparisonOperator = comparisonOperator ? this.SQL2comparisonOperator(comparisonOperator) : undefined;
-  if (Array.isArray(compare)) {
-    filterPart.compare = compare;
-  } else if (typeof myVar === "string") {
-    filterPart.compare = compare.split("[or]");
+  if (column !== undefined) filterPart.column = column;
+  if (comparisonOperator !== undefined) filterPart.comparisonOperator = this.SQL2comparisonOperator(comparisonOperator);
+  if (compare !== undefined) filterPart.compare = compare;
+
+  if (Array.isArray(filterPart.compare) || typeof filterPart.compare === "undefined") {
+  } else if (typeof filterPart.compare === "string") {
+    filterPart.compare = filterPart.compare.split("[or]");
   } else {
     filterPart.compare = undefined;
   }
@@ -141,11 +146,12 @@ module.exports = class uriQuery {
   }
 
   queryUpdate() {
-    this._colsGet = [];
-    this._colsSet = [];
-    this._colsFilter = [];
-    this._sortBy = [];
-    this._error = { error: false, message: "" };
+    this._colsGet.length = 0;
+    this._colsSet.length = 0;
+    this._colsFilter.length = 0;
+    this._sortBy.length = 0;
+    this._error.error = false;
+    this._error.message = "";
 
     // Add to _colsGet
     this.enforcedCols.forEach((d) => {
@@ -215,6 +221,20 @@ module.exports = class uriQuery {
       return queryString;
     }
 
+    function createFilterParts(queryString) {
+      const regex = /(\w+)(\!=|<>|\[neq\]|<=|\[le\]|\>=|\[ge\]|<|\[lt\]|>|\[gt\]|=|\[eq\])?((\w|-|\.|\%|\[or\])+)?/gi;
+      let filterparts;
+      const parts = [];
+      while ((filterparts = regex.exec(queryString))) {
+        const filterpartFull = filterparts[0];
+        const col = filterparts[1];
+        const comparisonOperator = filterparts[2] && this.SQL2comparisonOperator(filterparts[2]);
+        const compare = filterparts[3] && filterparts[3].split("[or]");
+        parts.push(createFilterPart.call(this, col, comparisonOperator, compare));
+      }
+      return parts;
+    }
+
     // Takes cols or a filter part and add to this.sortBy, this.cols,
     function queryHandler(queryString, type) {
       // Find all the "queryString" arguments
@@ -246,7 +266,7 @@ module.exports = class uriQuery {
         // preventWildcard is true but there is wildcards
         if (this.preventWildcard && compare?.length > 0 && compare.some((comparePart) => comparePart.includes("%"))) {
           error.error = true;
-          error.message += "preventWildcard set to true but found % in compare " + JSON.stringify(compare)+"\n";
+          error.message += "preventWildcard set to true but found % in compare " + JSON.stringify(compare) + "\n";
         }
         //
         if (this._RESTType === "POST" && type === "filter") {
@@ -263,7 +283,7 @@ module.exports = class uriQuery {
         // Only allowed comparisonOperator [eq] is allowed when RESTType is not GET
         if (this._RESTType !== "GET" && comparisonOperator !== "[eq]") {
           error.error = true;
-          error.message += "Got type " + this._RESTType + ", the only allowed comparisonOperator is [eq]. Got " + comparisonOperator+"\n";
+          error.message += "Got type " + this._RESTType + ", the only allowed comparisonOperator is [eq]. Got " + comparisonOperator + "\n";
         }
 
         // Create the filterpart.
@@ -279,7 +299,7 @@ module.exports = class uriQuery {
                   this._colsGet.push(filterPart.column);
                 } else {
                   error.error = true;
-                  error.message += "col:" + col + " is not in allowedCols " + JSON.stringify(allowedCols) + "\n";
+                  error.message += "col:" + col + " is not in allowedCols " + JSON.stringify(this.allowedCols) + "\n";
                 }
               case "DELETE":
                 if (filterPart.comparisonOperator && filterPart?.compare?.length > 0) this._colsFilter.push(filterPart);
@@ -290,7 +310,7 @@ module.exports = class uriQuery {
                   this._colsSet.push(filterPart);
                 } else {
                   error.error = true;
-                  error.message += "col:" + col + " is not in allowedCols " + JSON.stringify(allowedCols) + "\n";
+                  error.message += "col:" + col + " is not in allowedCols " + JSON.stringify(this.allowedCols) + "\n";
                 }
                 break;
             }
@@ -331,9 +351,13 @@ module.exports = class uriQuery {
 
     // If no cols are defined and allowedCols are defined then return all allowedCols
     if (this._colsGet.length === 0 && this.allowedCols.length) {
-      cols.push(...allowedCols);
+      this._colsGet.push(...this.allowedCols);
     }
 
+    // Convert all enfoncedCols to proper filterParts
+    this.enforcedCols.forEach((col) => {
+      this.enforcedCols.push(...this.createFilterParts.call(this.col));
+    });
     // verify that all required setValues are defined
     if (this.enforcedCols?.length) {
       for (let i = 0; i < this.requiredSets.length; i++) {
@@ -351,7 +375,8 @@ module.exports = class uriQuery {
 
     if (this.enforcedFilters?.length) {
       for (let i = 0; i < this.enforcedFilters.length; i++) {
-        const filterR = this.enforcedFilters[i];
+        let filterR = this.enforcedFilters[i];
+        filterR = createFilterParts.call(this,filterR);
         // if the is only column assume it's [eq]
         if (!filterR.comparisonOperator) filterR.comparisonOperator = "[eq]";
         const found = this._colsFilter.some((fil) => fil.column === filterR.column && fil.comparisonOperator === filterR.comparisonOperator && fil.compare === filterR.compare);
