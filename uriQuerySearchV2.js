@@ -222,6 +222,8 @@ module.exports = class uriQuery {
     }
 
     function createFilterParts(queryString) {
+      // if already a filterpart just retun it unchanged
+      if(queryString.column || queryString.comparisonOperator || queryString.compare) return queryString;
       const regex = /(\w+)(\!=|<>|\[neq\]|<=|\[le\]|\>=|\[ge\]|<|\[lt\]|>|\[gt\]|=|\[eq\])?((\w|-|\.|\%|\[or\])+)?/gi;
       let filterparts;
       const parts = [];
@@ -248,42 +250,36 @@ module.exports = class uriQuery {
         const comparisonOperator = filterparts[2] && this.SQL2comparisonOperator(filterparts[2]);
         const compare = filterparts[3] && filterparts[3].split("[or]");
         const error = this._error;
+        let newError = "";
 
         // if not type cols and col, comparisonOperator or compare is empty/missing/invalid.
         if (!col) {
-          error.error = true;
-          error.message += "col is missing/empty\n";
+          newError += "col is missing/empty\n";
         }
         if (type !== "cols" && (!comparisonOperator || !compare?.length)) {
-          error.error = true;
-          error.message += "comparisonOperator is missing/empty/invalid or compare is missing/empty\n";
+          newError += "comparisonOperator is missing/empty/invalid or compare is missing/empty\n";
         }
         // If comparisonOperator or compare is empty/missing
         if (this._RESTType !== "GET" && (!comparisonOperator || !compare?.length)) {
-          error.error = true;
-          error.message += "comparisonOperator or compare is empty/missing\n";
+          newError += "comparisonOperator or compare is empty/missing\n";
         }
         // preventWildcard is true but there is wildcards
         if (this.preventWildcard && compare?.length > 0 && compare.some((comparePart) => comparePart.includes("%"))) {
-          error.error = true;
-          error.message += "preventWildcard set to true but found % in compare " + JSON.stringify(compare) + "\n";
+          newError += "preventWildcard set to true but found % in compare " + JSON.stringify(compare) + "\n";
         }
         //
         if (this._RESTType === "POST" && type === "filter") {
-          error.error = true;
-          error.message += "Got a filter and type POST, filters are not used when create a object\n";
+          newError += "Got a filter and type POST, filters are not used when create a object\n";
         }
         // If comparisonOperator is not [eq] or [neq] and compare contains a % or compare contain more than one value
         if ((compare || comparisonOperator) && !/\[n?eq\]/i.test(comparisonOperator) && (compare?.length !== 1 || compare?.some((comparePart) => comparePart?.includes("%")))) {
           // Todo if broken filterPart break
-          error.error = true;
-          error.message += "Invalid mix of compare: " + JSON.stringify(compare) + " and comparisonOperator: " + comparisonOperator + "\n";
-          error.message += "Only =,!=,[eq],[neq] is allowed to use with %, or multiple options\n";
+          newError += "Invalid mix of compare: " + JSON.stringify(compare) + " and comparisonOperator: " + comparisonOperator + "\n";
+          newError += "Only =,!=,[eq],[neq] is allowed to use with %, or multiple options\n";
         }
         // Only allowed comparisonOperator [eq] is allowed when RESTType is not GET
         if (this._RESTType !== "GET" && comparisonOperator !== "[eq]") {
-          error.error = true;
-          error.message += "Got type " + this._RESTType + ", the only allowed comparisonOperator is [eq]. Got " + comparisonOperator + "\n";
+          newError += "Got type " + this._RESTType + ", the only allowed comparisonOperator is [eq]. Got " + comparisonOperator + "\n";
         }
 
         // Create the filterpart.
@@ -298,8 +294,7 @@ module.exports = class uriQuery {
                 if (col && (this.allowedCols.length === 0 || this.allowedCols.includes(col))) {
                   this._colsGet.push(filterPart.column);
                 } else {
-                  error.error = true;
-                  error.message += "col:" + col + " is not in allowedCols " + JSON.stringify(this.allowedCols) + "\n";
+                  newError += "col:" + col + " is not in allowedCols " + JSON.stringify(this.allowedCols) + "\n";
                 }
               case "DELETE":
                 if (filterPart.comparisonOperator && filterPart?.compare?.length > 0) this._colsFilter.push(filterPart);
@@ -309,20 +304,28 @@ module.exports = class uriQuery {
                 if (col && (this.allowedCols.length === 0 || this.allowedCols.includes(col))) {
                   this._colsSet.push(filterPart);
                 } else {
-                  error.error = true;
-                  error.message += "col:" + col + " is not in allowedCols " + JSON.stringify(this.allowedCols) + "\n";
+                  newError += "col:" + col + " is not in allowedCols " + JSON.stringify(this.allowedCols) + "\n";
                 }
                 break;
             }
             break;
         }
-        if (error.error) {
-          error.message = filterpartFull + " resulted in col: '" + col + "' and comparisonOperator: '" + comparisonOperator + "' compare: '" + JSON.stringify(compare) + "'\n" + error.message;
+        if (newError !== "") {
+          error.error = true;
+          error.message += filterpartFull + " resulted in col: '" + col + "' and comparisonOperator: '" + comparisonOperator + "' compare: '" + JSON.stringify(compare) + "'\n";
+          error.message += newError;
           this._colsFilter.length = 0;
           this._colsGet.length = 0;
           this._colsSet.length = 0;
           this._sortBy.length = 0;
         }
+      }
+
+      if (this.error.error) {
+        this._colsFilter.length = 0;
+        this._colsGet.length = 0;
+        this._colsSet.length = 0;
+        this._sortBy.length = 0;
       }
     }
 
@@ -342,6 +345,14 @@ module.exports = class uriQuery {
         filterQuerys.push(queryPart.slice(7));
       }
     });
+    if (this.RESTType === "PATCH" && !filterQuerys.length) {
+      this.error.error = true;
+      this.error.message += "Got Patch but no filters";
+      this._colsFilter.length = 0;
+      this._colsGet.length = 0;
+      this._colsSet.length = 0;
+      this._sortBy.length = 0;
+    }
     colsQuerys.forEach((colsQuery) => {
       queryHandler.call(this, colsQuery, "cols");
     });
@@ -376,7 +387,7 @@ module.exports = class uriQuery {
     if (this.enforcedFilters?.length) {
       for (let i = 0; i < this.enforcedFilters.length; i++) {
         let filterR = this.enforcedFilters[i];
-        filterR = createFilterParts.call(this,filterR);
+        filterR = createFilterParts.call(this, filterR);
         // if the is only column assume it's [eq]
         if (!filterR.comparisonOperator) filterR.comparisonOperator = "[eq]";
         const found = this._colsFilter.some((fil) => fil.column === filterR.column && fil.comparisonOperator === filterR.comparisonOperator && fil.compare === filterR.compare);
@@ -437,7 +448,17 @@ module.exports = class uriQuery {
           .filter((c) => !this.allowedCols.length || this.allowedCols.includes(c)) // remove any column that don't exist in allowedCols. If AllowedCols is empty allow all.
           .map((col) => esc(col.compare)) // create new array with escaped columns
           .join(", "); // create a comma separated list of
-        sql += ") FROM " + table;
+        sql += ")";
+        break;
+      case "PATCH":
+        sql = "UPDATE " + table + " SET ";
+        sql += this._colsSet
+          .filter((c) => !this.allowedCols.length || this.allowedCols.includes(c)) // remove any column that don't exist in allowedCols. If AllowedCols is empty allow all.
+          .map((col) => esc(col.column) + " = " + esc(col.compare[0])) // create new array with escaped columns
+          .join(", "); // create a comma separated list of
+        break;
+      case "DELETE":
+        sql = "DELETE FROM " + table;
         break;
     }
     sql += this.createSQLwhere();
@@ -470,7 +491,7 @@ module.exports = class uriQuery {
     for (let i2 = 0; i2 < filter.length; i2++) {
       const filterPart = filter[i2];
       // if any wildcard we need to split it with " OR " between as sql in don't handle wildcards.
-      if (filterPart.compare.find((e) => e.includes("%"))) {
+      if (filterPart?.compare && filterPart.compare.find((e) => e.includes("%"))) {
         // if more than one compare add "("
         if (filterPart.compare.length > 1) string += "(";
         for (let i3 = 0; i3 < filterPart.compare.length; i3++) {

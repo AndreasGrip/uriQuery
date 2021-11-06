@@ -78,9 +78,7 @@ test("new UriQuerySearch('?cols=first>2%,second>20,third[asc]=John%[or]%Doe') Er
   expect(uriQuery.preventWildcard).toBe(false);
   expect(uriQuery.error.error).toBe(true);
   expect(uriQuery.error.message).toBe(
-    `third=John%[or]%Doe resulted in col: 'third' and comparisonOperator: '[eq]' compare: '["John%","%Doe"]'
-second>20 resulted in col: 'second' and comparisonOperator: '[gt]' compare: '["20"]'
-first>2% resulted in col: 'first' and comparisonOperator: '[gt]' compare: '["2%"]'
+    `first>2% resulted in col: 'first' and comparisonOperator: '[gt]' compare: '["2%"]'
 Invalid mix of compare: ["2%"] and comparisonOperator: [gt]
 Only =,!=,[eq],[neq] is allowed to use with %, or multiple options
 `
@@ -92,9 +90,7 @@ Only =,!=,[eq],[neq] is allowed to use with %, or multiple options
 
   const sqlResponse = uriQuery.sqlGet("table");
   expect(sqlResponse instanceof Error ? sqlResponse.message : typeof sqlResponse === "string" ? sqlResponse : "").toBe(
-    `third=John%[or]%Doe resulted in col: 'third' and comparisonOperator: '[eq]' compare: '["John%","%Doe"]'
-second>20 resulted in col: 'second' and comparisonOperator: '[gt]' compare: '["20"]'
-first>2% resulted in col: 'first' and comparisonOperator: '[gt]' compare: '["2%"]'
+    `first>2% resulted in col: 'first' and comparisonOperator: '[gt]' compare: '["2%"]'
 Invalid mix of compare: ["2%"] and comparisonOperator: [gt]
 Only =,!=,[eq],[neq] is allowed to use with %, or multiple options
 `
@@ -199,9 +195,7 @@ test('new UriQuerySearch("?cols=first=firstValue,second=secondValue", "POST")', 
   expect(uriQuery._sortBy).toEqual([]);
 
   let sqlResponse = uriQuery.sqlGet("table");
-  expect(sqlResponse instanceof Error ? sqlResponse.message : typeof sqlResponse === "string" ? sqlResponse : "").toBe(
-    "INSERT INTO table ('first', 'second') VALUES ('firstValue', 'secondValue') FROM table"
-  );
+  expect(sqlResponse instanceof Error ? sqlResponse.message : typeof sqlResponse === "string" ? sqlResponse : "").toBe("INSERT INTO table ('first', 'second') VALUES ('firstValue', 'secondValue')");
 });
 
 test('new UriQuerySearch("?cols=first=firstValue,second=secondValue", "POST")', () => {
@@ -229,9 +223,7 @@ test('new UriQuerySearch("?cols=first=firstValue,second=secondValue", "POST")', 
   expect(uriQuery._sortBy).toEqual([]);
 
   let sqlResponse = uriQuery.sqlGet("table");
-  expect(sqlResponse instanceof Error ? sqlResponse.message : typeof sqlResponse === "string" ? sqlResponse : "").toBe(
-    "INSERT INTO table ('first', 'second') VALUES ('firstValue', 'secondValue') FROM table"
-  );
+  expect(sqlResponse instanceof Error ? sqlResponse.message : typeof sqlResponse === "string" ? sqlResponse : "").toBe("INSERT INTO table ('first', 'second') VALUES ('firstValue', 'secondValue')");
 });
 
 test("new UriQuerySearch('?cols=first=firstValue,second=secondValue,third') Error", () => {
@@ -281,10 +273,9 @@ test("new UriQuerySearch('?cols=first>=firstValue,second=secondValue,third') Err
   expect(uriQuery.preventWildcard).toBe(true);
   expect(uriQuery.error.error).toBe(true);
   expect(uriQuery.error.message).toBe(
-    "third resulted in col: 'third' and comparisonOperator: 'undefined' compare: 'undefined'\n" +
-      "second=secondValue resulted in col: 'second' and comparisonOperator: '[eq]' compare: '[\"secondValue\"]'\n" +
-      "first>=firstValue resulted in col: 'first' and comparisonOperator: '[ge]' compare: '[\"firstValue\"]'\n" +
+    "first>=firstValue resulted in col: 'first' and comparisonOperator: '[ge]' compare: '[\"firstValue\"]'\n" +
       "Got type POST, the only allowed comparisonOperator is [eq]. Got [ge]\n" +
+      "third resulted in col: 'third' and comparisonOperator: 'undefined' compare: 'undefined'\n" +
       "comparisonOperator or compare is empty/missing\n" +
       "Got type POST, the only allowed comparisonOperator is [eq]. Got undefined\n"
   );
@@ -295,10 +286,9 @@ test("new UriQuerySearch('?cols=first>=firstValue,second=secondValue,third') Err
 
   let sqlResponse = uriQuery.sqlGet("table");
   expect(sqlResponse instanceof Error ? sqlResponse.message : typeof sqlResponse === "string" ? sqlResponse : "").toBe(
-    "third resulted in col: 'third' and comparisonOperator: 'undefined' compare: 'undefined'\n" +
-      "second=secondValue resulted in col: 'second' and comparisonOperator: '[eq]' compare: '[\"secondValue\"]'\n" +
-      "first>=firstValue resulted in col: 'first' and comparisonOperator: '[ge]' compare: '[\"firstValue\"]'\n" +
+    "first>=firstValue resulted in col: 'first' and comparisonOperator: '[ge]' compare: '[\"firstValue\"]'\n" +
       "Got type POST, the only allowed comparisonOperator is [eq]. Got [ge]\n" +
+      "third resulted in col: 'third' and comparisonOperator: 'undefined' compare: 'undefined'\n" +
       "comparisonOperator or compare is empty/missing\n" +
       "Got type POST, the only allowed comparisonOperator is [eq]. Got undefined\n"
   );

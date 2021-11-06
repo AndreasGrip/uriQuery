@@ -39,7 +39,7 @@ RESTType and query can be defined upon creating the object.
     const UriQuerySearch = require('uriQuerySearch');
     const qs = new UriQuerySearch('?cols=first,second,third&filter=first[asc]=1,second[desc]=2,third=3','GET');
     const sql = sq.sql('table'); // will return
-    // SELECT 'first', 'second', 'third' FROM 'fromTable' WHERE  OR ('first' = '1' AND 'second' = '2' AND 'third' = '3') ORDER BY 'first' asc, 'second' desc
+    // SELECT 'first', 'second', 'third' FROM table WHERE 'first' = '1' AND 'second' = '2' AND 'third' = '3' ORDER BY 'first' asc, 'second' desc
 
 ### More examples
 
@@ -48,25 +48,35 @@ RESTType and query can be defined upon creating the object.
     qs.allowedCols.push('third');
     // qs.allowedCols = ['first', 'third']; // you can also do it this way.
     console.log(qs.sql('table'));
-    // SELECT 'first', 'third' FROM 'table' WHERE  OR ('first' = '1' AND 'second' = '2' AND 'third' = '3') ORDER BY 'first' asc, 'second' desc
+    // Error: second resulted in col: 'second' and comparisonOperator: 'undefined' compare: 'undefined'
+       col:second is not in allowedCols ["first","third"]
 
 >
 
 
     const qs = new UriQuerySearch('?cols=first,second,third&filter=first[asc]=1,second[desc]=2,third=3&filter="first[ge]20','GET');
     console.log(qs.sql('table'));
-    // SELECT 'first', 'second', 'third' FROM 'table' WHERE  OR ('first' = '1' AND 'second' = '2' AND 'third' = '3') OR 'first' >= '20' ORDER BY 'first' asc, 'second' desc
+    // SELECT 'first', 'second', 'third' FROM table WHERE 'first' = '1' AND 'second' = '2' AND 'third' = '3' AND 'first' >= '20' ORDER BY 'first' asc, 'second' desc
+    
     console.log(qs.sql('(select t1.first, t2.second, t2.third from table1 t1 join table2 t2 on t1.id = t2.id)'));
-    // SELECT 'first', 'second', 'third' FROM '(select t1.first, t2.second, t2.third from table1 t1 join table2 t2 on t1.id = t2.id)' WHERE  OR ('first' = '1' AND 'second' = '2' AND 'third' = '3') OR 'first' >= '20' ORDER BY 'first' asc, 'second' desc
+    // SELECT 'first', 'second', 'third' FROM (select t1.first, t2.second, t2.third from table1 t1 join table2 t2 on t1.id = t2.id) WHERE 'first' = '1' AND 'second' = '2' AND 'third' = '3' AND 'first' >= '20' ORDER BY 'first' asc, 'second' desc
 
 >
 
     const qs = new UriQuerySearch('?cols=first=1,second=2','POST');
-    console.log(qs.sql(table));
-    // INSERT INTO 'table' ( 'first' , 'second') values ('1', '2');
+    console.log(qs.sql('table'));
+    // INSERT INTO table ('first', 'second') VALUES ('1', '2') FROM table
 
 >
 
     const qs = new UriQuerySearch('?cols=id=42','DELETE');
-    console.log(qs.sql(table));
-    // DELETE FROM 'table' WHERE id=42;
+    console.log(qs.sql('table'));
+    // DELETE FROM table WHERE 'id' = '42'
+
+    const qs = new UriQuerySearch("?cols=first=firstValue,second=secondValue", "PATCH");
+    console.log(qs.sql('table'));
+    // Error: Got Patch but no filters
+
+    const qs = new UriQuerySearch("?cols=first=firstValue,second=secondValue&filter=id=20", "PATCH");
+    console.log(qs.sql('table'));
+    // UPDATE table SET 'first' = 'firstValue', 'second' = 'secondValue' WHERE 'id' = '10'
