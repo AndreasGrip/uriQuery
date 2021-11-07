@@ -366,9 +366,10 @@ module.exports = class uriQuery {
     }
 
     // Convert all enfoncedCols to proper filterParts
-    this.enforcedCols.forEach((col) => {
-      this.enforcedCols.push(...this.createFilterParts.call(this.col));
-    });
+    for(let i = 0; this.enforcedCols.length < i; i++) {
+      this.enforcedCols[i] = this.createFilterParts.call(this, this.enforcedCols[i] )
+    }
+
     // verify that all required setValues are defined
     if (this.enforcedCols?.length) {
       for (let i = 0; i < this.requiredSets.length; i++) {
