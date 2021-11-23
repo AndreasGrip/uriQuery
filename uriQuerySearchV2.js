@@ -372,10 +372,10 @@ module.exports = class uriQuery {
 
     // verify that all required setValues are defined
     if (this.enforcedCols?.length) {
-      for (let i = 0; i < this.requiredSets.length; i++) {
+      for (let i = 0; i < this.enforcedCols.length; i++) {
         const rSet = this.enforcedCols[i];
         // if the is only column assume it's [eq] (this should not happen)
-        if (!rSet.comparisonOperator) rSet.comparisonOperator = "[eq]";
+        if (!rSet?.comparisonOperator) rSet.comparisonOperator = "[eq]";
         const found = this._colsSet.some((setV) => rSet.column === setV.column && (!rSet.comparisonOperator || rSet.comparisonOperator === setV.comparisonOperator));
         if (!found) {
           this._error.error = true;
