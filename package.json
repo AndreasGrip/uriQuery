@@ -1,5 +1,5 @@
 {
-  "name": "uriquery",
+  "name": "uriquerytool",
   "version": "0.9.100",
   "description": "convert query part of uri into sql compatible object.",
   "main": "uriQuery.js",
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AndreasGrip/uriQuery.git"
+    "url": "git+https://github.com/AndreasGrip/uriQueryTool.git"
   },
   "keywords": [
     "uri",
@@ -19,9 +19,9 @@
   "author": "Andreas Grip",
   "license": "GPL-3.0-or-later",
   "bugs": {
-    "url": "https://github.com/AndreasGrip/uriQuery/issues"
+    "url": "https://github.com/AndreasGrip/uriQueryTool/issues"
   },
-  "homepage": "https://github.com/AndreasGrip/uriQuery#readme",
+  "homepage": "https://github.com/AndreasGrip/uriQueryTool#readme",
   "dependencies": {
     "sqlstring": "^2.3.2"
   },
