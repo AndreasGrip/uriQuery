@@ -69,7 +69,7 @@ const tests = [
       sqlTable: "table",
       sqlQueryError: true,
       sqlQuery: new Error("REST GET but no defined columns to get."),
-      description: "no defined rest and no defiend parameters",
+      description: "no defined rest and no defined parameters",
     },
   },
   // GET One column, rest in lowercase
