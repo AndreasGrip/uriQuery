@@ -226,6 +226,8 @@ module.exports = class uriQuery {
   }
 
   extractSortOrder(queryString) {
+    const maxSortArg = 30;
+    if(queryString.match(/\[(asc|desc)\]/gi || []).length > 30) throw new Error('More than max (' + maxSortArg + ') sorting arguments.')
     // extract asc / desc columns
     const regexSortOrder = /(\w+)\[(asc|desc)\]/gi;
     // For each asc/desc found....
@@ -242,8 +244,8 @@ module.exports = class uriQuery {
 
   removeSortOrder(queryString) {
     // extract asc / desc columns
-    const regexSortOrder = /(\w+)\[(asc|desc)\]/gi;
-    queryString = queryString.replace(regexSortOrder, "$1");
+    const regexSortOrder = /\[(asc|desc)\]/gi;
+    queryString = queryString.replace(regexSortOrder, "");
     return queryString;
   }
 
