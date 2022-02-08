@@ -1,6 +1,6 @@
 {
   "name": "uriquerytool",
-  "version": "0.9.101",
+  "version": "0.9.102",
   "description": "convert query part of uri into sql compatible object.",
   "main": "uriQuery.js",
   "scripts": {
