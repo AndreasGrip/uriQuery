@@ -638,7 +638,13 @@ module.exports = class uriQuery {
     if (!table) throw new Error("sqlGet missing argument");
     switch (this._RESTtype) {
       case "GET":
-        if (!this.get.gets.length) throw new Error("REST GET but no defined columns to get.");
+        if (!this.get.gets.length) {
+          if (this.get.allowedGet.length) {
+            this.get.gets.push(...this.get.allowedGet);
+          } else {
+            throw new Error("REST GET but no defined columns to get.");
+          }
+        }
         break;
       case "POST":
         if (!this.post.sets.length) throw new Error("REST POST but no defined columns to set.");
