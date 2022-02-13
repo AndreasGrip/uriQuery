@@ -88,7 +88,7 @@ module.exports = class uriQuery {
 
     this._query = uriQuery;
     this.escape = sqlString.escape; // Used to escape values, not columns etc.
-    this.escapeId = sqlString.escape; // If you can't trust an SQL identifier (database / table / column name) because it is provided by a user, you should escape it with SqlString.escapeId(identifier)
+    this.escapeId = sqlString.escapeId; // If you can't trust an SQL identifier (database / table / column name) because it is provided by a user, you should escape it with SqlString.escapeId(identifier)
     this.RESTtype = RESTtype ? RESTtype.toUpperCase() : "GET"; //
   }
 
@@ -677,7 +677,6 @@ module.exports = class uriQuery {
         sql += this.get.gets
           .map((filter) =>
             escId(filter.column) // extract the column name
-              .replace(/\'/g, "`")
           ) // Escape ' char
           .join(", "); // create a comma separated list of
         sql += " FROM ";
@@ -736,7 +735,6 @@ module.exports = class uriQuery {
         sql += this.post.sets
           .map((filter) =>
             escId(filter.column) // extract the column name
-              .replace(/\'/g, "`")
           ) // Escape ' char
           .join(", "); // create a comma separated list of
         sql += ") VALUES (";
