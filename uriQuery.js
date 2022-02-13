@@ -87,7 +87,8 @@ module.exports = class uriQuery {
     this._dbSchema = ""; // This will be added before table name if set, not really recommended
 
     this._query = uriQuery;
-    this.escape = sqlString.escape; // What function to use to escape sql variables
+    this.escape = sqlString.escape; // Used to escape values, not columns etc.
+    this.escapeId = sqlString.escape; // If you can't trust an SQL identifier (database / table / column name) because it is provided by a user, you should escape it with SqlString.escapeId(identifier)
     this.RESTtype = RESTtype ? RESTtype.toUpperCase() : "GET"; //
   }
 
@@ -164,6 +165,7 @@ module.exports = class uriQuery {
   // Part meaning that compare/comparisonOperator can be missing
   validateFilterPart(filterPart, RESTtype, part = false) {
     const fp = this.createFilterPart(filterPart);
+    filterPart = {};
     filterPart.column = fp.column;
     filterPart.compare = fp.compare;
     filterPart.comparisonOperator = fp.comparisonOperator;
@@ -303,6 +305,10 @@ module.exports = class uriQuery {
   }
 
   _getValidate() {
+    //if not all gets are proper filterParts, fix that.
+    for (let i = 0; i < this.get.gets.length; i++) {
+      this.get.gets[i] = this.createFilterPart(this.get.gets[i]);
+    }
     this.get.gets.forEach((d) => this.validateFilterPart(d, "GET"));
 
     // This is just code to remove any duplicates, not pretty but works.
@@ -370,7 +376,7 @@ module.exports = class uriQuery {
         this.delete.validate();
         break;
       default:
-        throw new Error("RESTtype " + this._RESTtype + " is unknow or not supported");
+        throw new Error("RESTtype " + this._RESTtype + " is unknown or not supported");
     }
 
     // Add enforced gets/sets/filters
@@ -418,7 +424,7 @@ module.exports = class uriQuery {
         break;
       case "PATCH":
         parts.forEach((p) => {
-          if (!Array.isArray(p.compare) || typeof p.comparisonOperator === "undefined") throw new Error("Undefined comparisonoperator or compare not array on DELETE");
+          if (!Array.isArray(p.compare) || typeof p.comparisonOperator === "undefined") throw new Error("Undefined comparisonoperator or compare not array on PATCH");
           if (p.comparisonOperator && p.comparisonOperator === "[as]") this.patch.sets.push(p);
           if (p.comparisonOperator && p.comparisonOperator !== "[as]") this.patch.filters.push(p);
         });
@@ -664,18 +670,19 @@ module.exports = class uriQuery {
 
     let sql = "";
     const esc = this.escape;
+    const escId = this.escapeId;
     switch (this._RESTtype) {
       case "GET":
         sql += "SELECT ";
         sql += this.get.gets
           .map((filter) =>
-            esc(filter.column) // extract the column name
+            escId(filter.column) // extract the column name
               .replace(/\'/g, "`")
           ) // Escape ' char
           .join(", "); // create a comma separated list of
         sql += " FROM ";
-        sql += this._dbSchema ? this._dbSchema + "." : "";
-        sql += table;
+        sql += this._dbSchema ? escId(this._dbSchema) + "." : "";
+        sql += escId(table);
         if (this.get.filters.length > 0) {
           sql += " WHERE ";
           const filter = this.get.filters;
@@ -685,7 +692,7 @@ module.exports = class uriQuery {
             // if any wildcard is present we need to split it with " OR " between as sql in don't handle wildcards.
             if (f.compare.find((e) => e.includes("%"))) {
               f.compare.forEach((compare, idx, arr) => {
-                sql += esc(f.column) + " ";
+                sql += escId(f.column) + " ";
                 if (f.comparisonOperator === "[neq]") sql += "NOT ";
 
                 sql += "LIKE ";
@@ -695,14 +702,14 @@ module.exports = class uriQuery {
               });
             } else if (/\[n?eq\]/.test(f.comparisonOperator)) {
               // test if comparison operator is [eq] or [neq]
-              sql += esc(f.column) + " ";
+              sql += escId(f.column) + " ";
               if (f.comparisonOperator === "[neq]") sql += "NOT ";
 
               sql += "IN ";
               sql += "(" + f.compare.map((c) => esc(c)).join(",") + ")";
             } else {
               f.compare.forEach((compare, idx, arr) => {
-                sql += esc(f.column) + " ";
+                sql += escId(f.column) + " ";
 
                 sql += this.comparisonOperator2SQL(f.comparisonOperator) + " ";
                 sql += esc(compare);
@@ -717,18 +724,18 @@ module.exports = class uriQuery {
         }
         if (this.get.sortBy.length > 0) sql += " ORDER BY ";
         this.get.sortBy.forEach((so, soidx, soarr) => {
-          sql += esc(so.column) + " " + so.sortorder;
+          sql += escId(so.column) + " " + so.sortorder;
           if (soidx !== soarr.length - 1) sql += ", ";
         });
         break;
       case "POST":
         sql += "INSERT INTO ";
-        sql += this.dbSchema ? this.dbSchema + "." : "";
-        sql += table;
+        sql += this.dbSchema ? escId(this.dbSchema) + "." : "";
+        sql += escId(table);
         sql += " (";
         sql += this.post.sets
           .map((filter) =>
-            esc(filter.column) // extract the column name
+            escId(filter.column) // extract the column name
               .replace(/\'/g, "`")
           ) // Escape ' char
           .join(", "); // create a comma separated list of
@@ -740,11 +747,11 @@ module.exports = class uriQuery {
         break;
       case "PATCH":
         sql = "UPDATE ";
-        sql += this._dbSchema ? this._dbSchema + "." : "";
-        sql += table;
+        sql += this._dbSchema ? escId(this._dbSchema) + "." : "";
+        sql += escId(table);
         sql += " SET ";
         sql += this.patch.sets
-          .map((filter) => esc(filter.column) + " = " + esc(filter.compare[0])) // create new array with escaped columns
+          .map((filter) => escId(filter.column) + " = " + esc(filter.compare[0])) // create new array with escaped columns
           .join(", "); // create a comma separated list of
         if (this.patch.filters.length > 0) {
           sql += " WHERE ";
@@ -755,7 +762,7 @@ module.exports = class uriQuery {
             // if any wildcard is present we need to split it with " OR " between as sql in don't handle wildcards.
             if (f.compare.find((e) => e.includes("%"))) {
               f.compare.forEach((compare, idx, arr) => {
-                sql += esc(f.column) + " ";
+                sql += escId(f.column) + " ";
                 if (f.comparisonOperator === "[neq]") sql += "NOT ";
 
                 sql += "LIKE ";
@@ -765,14 +772,14 @@ module.exports = class uriQuery {
               });
             } else if (/\[n?eq\]/.test(f.comparisonOperator)) {
               // test if comparison operator is [eq] or [neq]
-              sql += esc(f.column) + " ";
+              sql += escId(f.column) + " ";
               if (f.comparisonOperator === "[neq]") sql += "NOT ";
 
               sql += "IN ";
               sql += "(" + f.compare.map((c) => esc(c)).join(",") + ")";
             } else {
               f.compare.forEach((compare, idx, arr) => {
-                sql += esc(f.column) + " ";
+                sql += escId(f.column) + " ";
 
                 sql += this.comparisonOperator2SQL(f.comparisonOperator) + " ";
                 sql += esc(compare);
@@ -789,8 +796,8 @@ module.exports = class uriQuery {
         break;
       case "DELETE":
         sql = "DELETE FROM ";
-        sql += this._dbSchema ? this._dbSchema + "." : "";
-        sql += table;
+        sql += this._dbSchema ? escId(this._dbSchema) + "." : "";
+        sql += escId(table);
         if (this.delete.filters.length > 0) {
           sql += " WHERE ";
           const filter = this.delete.filters;
@@ -800,7 +807,7 @@ module.exports = class uriQuery {
             // if any wildcard is present we need to split it with " OR " between as sql in don't handle wildcards.
             if (f.compare.find((e) => e.includes("%"))) {
               f.compare.forEach((compare, idx, arr) => {
-                sql += esc(f.column) + " ";
+                sql += escId(f.column) + " ";
                 if (f.comparisonOperator === "[neq]") sql += "NOT ";
 
                 sql += "LIKE ";
@@ -810,14 +817,14 @@ module.exports = class uriQuery {
               });
             } else if (/\[n?eq\]/.test(f.comparisonOperator)) {
               // test if comparison operator is [eq] or [neq]
-              sql += esc(f.column) + " ";
+              sql += escId(f.column) + " ";
               if (f.comparisonOperator === "[neq]") sql += "NOT ";
 
               sql += "IN ";
               sql += "(" + f.compare.map((c) => esc(c)).join(",") + ")";
             } else {
               f.compare.forEach((compare, idx, arr) => {
-                sql += esc(f.column) + " ";
+                sql += escId(f.column) + " ";
 
                 sql += this.comparisonOperator2SQL(f.comparisonOperator) + " ";
                 sql += esc(compare);
